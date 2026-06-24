@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Page Image to PDF Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #4361ee;
+            --primary-dark: #3a56d4;
+            --secondary: #6c757d;
+            --success: #2ecc71;
+            --danger: #e74c3c;
+            --warning: #f39c12;
+            --background: #f8f9fa;
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: var(--card-shadow);
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        header h1 i {
+            margin-right: 15px;
+        }
+
+        header p {
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .drop-zone {
+            border: 3px dashed #d1d5db;
+            border-radius: 16px;
+            padding: 60px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #fafbfc;
+            position: relative;
+        }
+
+        .drop-zone:hover {
+            border-color: var(--primary);
+            background: #f0f4ff;
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--primary);
+            background: #e8edff;
+            transform: scale(1.01);
+            box-shadow: 0 0 30px rgba(67, 97, 238, 0.2);
+        }
+
+        .drop-zone-content i {
+            font-size: 4rem;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .drop-zone-content h3 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin-bottom: 8px;
+        }
+
+        .drop-zone-content p {
+            color: var(--secondary);
+            margin-bottom: 8px;
+        }
+
+        .file-types {
+            display: inline-block;
+            background: #e5e7eb;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            color: #4b5563;
+        }
+
+        #fileInput {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+            margin-bottom: 15px;
+        }
+
+        .advanced-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            background: #f1f3f5;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: #374151;
+        }
+
+        .control-group select,
+        .control-group input {
+            padding: 8px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            background: white;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+        }
+
+        .control-group select:focus,
+        .control-group input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        }
+
+        .preview-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .preview-section.visible {
+            display: block;
+        }
+
+        .preview-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .preview-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .preview-info h3 {
+            font-size: 1.2rem;
+            color: #1f2937;
+        }
+
+        .preview-info h3 i {
+            margin-right: 8px;
+            color: var(--primary);
+        }
+
+        .layout-info {
+            font-size: 0.9rem;
+            color: var(--secondary);
+            background: #f1f3f5;
+            padding: 4px 12px;
+            border-radius: 20px;
+        }
+
+        .preview-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #e5e7eb;
+            color: #374151;
+        }
+
+        .btn-secondary:hover {
+            background: #d1d5db;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #27ae60;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+
+        .mini-grid {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .mini-grid .empty-state {
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        .mini-grid .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .mini-grid .grid-preview {
+            display: grid;
+            gap: 5px;
+            width: 100%;
+            max-height: 300px;
+            overflow: hidden;
+        }
+
+        .mini-grid .grid-preview img {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 2px solid white;
+        }
+
+        .image-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+
+        .image-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .image-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+
+        .image-list::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+        }
+
+        .image-list-item {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 12px 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            cursor: grab;
+            border: 2px solid transparent;
+            user-select: none;
+        }
+
+        .image-list-item:hover {
+            background: #f1f3f5;
+            transform: translateX(5px);
+        }
+
+        .image-list-item.dragging {
+            opacity: 0.5;
+            background: #e5e7eb;
+            transform: scale(0.98);
+        }
+
+        .image-list-item.drag-over {
+            border-color: var(--primary);
+            background: #e8edff;
+            transform: scale(1.02);
+        }
+
+        .image-list-item .drag-handle {
+            color: #9ca3af;
+            font-size: 1.2rem;
+            cursor: grab;
+            padding: 5px;
+            transition: color 0.3s;
+        }
+
+        .image-list-item .drag-handle:hover {
+            color: var(--primary);
+        }
+
+        .image-list-item .thumb {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 2px solid #e5e7eb;
+        }
+
+        .image-list-item .info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .image-list-item .info .name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: #1f2937;
+        }
+
+        .image-list-item .info .size {
+            font-size: 0.8rem;
+            color: var(--secondary);
+        }
+
+        .image-list-item .info .dimensions {
+            font-size: 0.75rem;
+            color: #9ca3af;
+        }
+
+        .image-list-item .index {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 0.9rem;
+            min-width: 35px;
+            text-align: center;
+        }
+
+        .image-list-item .remove-btn {
+            background: none;
+            border: none;
+            color: #9ca3af;
+            cursor: pointer;
+            padding: 8px 10px;
+            border-radius: 6px;
+            transition: all 0.3s;
+        }
+
+        .image-list-item .remove-btn:hover {
+            color: var(--danger);
+            background: #fee2e2;
+        }
+
+        .progress-container {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .progress-container.hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), #764ba2);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        #progressText {
+            margin-top: 10px;
+            text-align: center;
+            color: var(--secondary);
+            font-size: 0.95rem;
+        }
+
+        .result-section {
+            margin-top: 30px;
+            padding: 40px;
+            background: #f0fdf4;
+            border-radius: 12px;
+            border: 2px solid var(--success);
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .result-section.hidden {
+            display: none;
+        }
+
+        .result-content {
+            text-align: center;
+        }
+
+        .success-icon {
+            font-size: 4rem;
+            color: var(--success);
+            margin-bottom: 15px;
+            animation: bounce 0.5s ease;
+        }
+
+        @keyframes bounce {
+            0%,
+            100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        .result-content h3 {
+            font-size: 1.5rem;
+            color: #1f2937;
+            margin-bottom: 10px;
+        }
+
+        .result-content p {
+            color: var(--secondary);
+            margin-bottom: 20px;
+        }
+
+        .result-details {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+
+        .result-details span {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #374151;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .result-details i {
+            color: var(--primary);
+        }
+
+        .result-actions {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: #1f2937;
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        .toast.warning {
+            background: var(--warning);
+        }
+
+        .toast i {
+            margin-right: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .controls,
+            .advanced-controls {
+                grid-template-columns: 1fr;
+            }
+
+            .preview-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .preview-actions {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .preview-actions .btn {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .result-details {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .mini-grid .grid-preview {
+                grid-template-columns: repeat(2, 1fr) !important;
+            }
+
+            .mini-grid .grid-preview img {
+                height: 60px;
+            }
+
+            .image-list-item {
+                padding: 8px 10px;
+            }
+
+            .image-list-item .thumb {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-file-pdf"></i> Single Page PDF Converter</h1>
+            <p>Combine multiple images into a single PDF page</p>
+        </header>
+
+        <div class="upload-section">
+            <div class="drop-zone" id="dropZone">
+                <div class="drop-zone-content">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Drag & Drop Images Here</h3>
+                    <p>or click to browse</p>
+                    <span class="file-types">Supports: JPG, PNG, BMP, GIF, TIFF, WEBP</span>
+                </div>
+                <input type="file" id="fileInput" multiple accept="image/*">
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="control-group">
+                <label><i class="fas fa-th"></i> Layout Mode:</label>
+                <select id="layoutMode">
+                    <option value="grid">Grid Layout</option>
+                    <option value="horizontal">Horizontal Strip</option>
+                    <option value="vertical">Vertical Strip</option>
+                </select>
+            </div>
+            <div class="control-group" id="gridControls">
+                <label>Columns:</label>
+                <select id="gridColumns">
+                    <option value="2">2 Columns</option>
+                    <option value="3" selected>3 Columns</option>
+                    <option value="4">4 Columns</option>
+                    <option value="5">5 Columns</option>
+                    <option value="6">6 Columns</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Page Size:</label>
+                <select id="pageSize">
+                    <option value="A4">A4 (210 × 297 mm)</option>
+                    <option value="Letter">Letter (8.5 × 11 in)</option>
+                    <option value="Legal">Legal (8.5 × 14 in)</option>
+                    <option value="A3">A3 (297 × 420 mm)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="advanced-controls">
+            <div class="control-group">
+                <label>Image Fit:</label>
+                <select id="imageFit">
+                    <option value="contain">Contain (Maintain Aspect)</option>
+                    <option value="cover">Cover (Fill & Crop)</option>
+                    <option value="stretch">Stretch to Fill</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Spacing:</label>
+                <select id="spacing">
+                    <option value="small">Small (5px)</option>
+                    <option value="medium" selected>Medium (10px)</option>
+                    <option value="large">Large (20px)</option>
+                    <option value="none">None</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Quality:</label>
+                <select id="quality">
+                    <option value="high">High (300 DPI)</option>
+                    <option value="medium" selected>Medium (150 DPI)</option>
+                    <option value="low">Low (72 DPI)</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Background:</label>
+                <select id="background">
+                    <option value="white">White</option>
+                    <option value="transparent">Transparent</option>
+                    <option value="black">Black</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="preview-section" id="previewSection">
+            <div class="preview-header">
+                <div class="preview-info">
+                    <h3><i class="fas fa-images"></i> Images (<span id="imageCount">0</span>)</h3>
+                    <span class="layout-info">Layout: <span id="layoutInfo">Grid</span></span>
+                </div>
+                <div class="preview-actions">
+                    <button id="arrangeBtn" class="btn btn-secondary">
+                        <i class="fas fa-sort"></i> Auto Arrange
+                    </button>
+                    <button id="reverseBtn" class="btn btn-secondary">
+                        <i class="fas fa-arrow-up"></i> Reverse
+                    </button>
+                    <button id="clearAllBtn" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Clear All
+                    </button>
+                    <button id="convertBtn" class="btn btn-primary">
+                        <i class="fas fa-file-pdf"></i> Convert to PDF
+                    </button>
+                </div>
+            </div>
+
+            <div class="mini-grid" id="miniGrid">
+                <div class="empty-state">
+                    <i class="fas fa-plus-circle"></i>
+                    <p>Add images to see preview</p>
+                </div>
+            </div>
+
+            <div class="image-list" id="imageList">
+                <div class="empty-state" style="text-align:center;padding:40px;color:#9ca3af;">
+                    <i class="fas fa-arrow-down" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                    <p>Drop images here or upload above</p>
+                </div>
+            </div>
+
+            <div style="margin-top:10px;font-size:0.8rem;color:#9ca3af;text-align:center;">
+                <i class="fas fa-arrows-alt"></i> Drag images to reorder
+            </div>
+        </div>
+
+        <div id="progressContainer" class="progress-container hidden">
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <p id="progressText">Processing...</p>
+        </div>
+
+        <div id="resultSection" class="result-section hidden">
+            <div class="result-content">
+                <i class="fas fa-check-circle success-icon"></i>
+                <h3>PDF Generated Successfully!</h3>
+                <p>All images combined into a single page PDF</p>
+                <div class="result-details">
+                    <span><i class="fas fa-images"></i> <span id="resultImageCount">0</span> images</span>
+                    <span><i class="fas fa-file-pdf"></i> 1 page</span>
+                    <span><i class="fas fa-weight-hanging"></i> <span id="resultSize">0</span> KB</span>
+                </div>
+                <div class="result-actions">
+                    <button id="downloadBtn" class="btn btn-success">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                    <button id="previewBtn" class="btn btn-primary">
+                        <i class="fas fa-eye"></i> Preview
+                    </button>
+                    <button id="convertMoreBtn" class="btn btn-secondary">
+                        <i class="fas fa-plus"></i> Convert More
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+
+    <script>
+        class SinglePagePDFConverter {
+            constructor() {
+                this.images = [];
+                this.convertedPDF = null;
+                this.convertedPDFSize = 0;
+                this.draggedItem = null;
+                this.dragOverItem = null;
+                this.initializeElements();
+                this.initializeEventListeners();
+            }
+
+            initializeElements() {
+                this.dropZone = document.getElementById('dropZone');
+                this.fileInput = document.getElementById('fileInput');
+                this.layoutMode = document.getElementById('layoutMode');
+                this.gridColumns = document.getElementById('gridColumns');
+                this.pageSize = document.getElementById('pageSize');
+                this.imageFit = document.getElementById('imageFit');
+                this.spacing = document.getElementById('spacing');
+                this.quality = document.getElementById('quality');
+                this.background = document.getElementById('background');
+                this.previewSection = document.getElementById('previewSection');
+                this.imageCount = document.getElementById('imageCount');
+                this.layoutInfo = document.getElementById('layoutInfo');
+                this.miniGrid = document.getElementById('miniGrid');
+                this.imageList = document.getElementById('imageList');
+                this.convertBtn = document.getElementById('convertBtn');
+                this.clearAllBtn = document.getElementById('clearAllBtn');
+                this.arrangeBtn = document.getElementById('arrangeBtn');
+                this.reverseBtn = document.getElementById('reverseBtn');
+                this.downloadBtn = document.getElementById('downloadBtn');
+                this.previewBtn = document.getElementById('previewBtn');
+                this.convertMoreBtn = document.getElementById('convertMoreBtn');
+                this.progressContainer = document.getElementById('progressContainer');
+                this.progressFill = document.getElementById('progressFill');
+                this.progressText = document.getElementById('progressText');
+                this.resultSection = document.getElementById('resultSection');
+                this.resultImageCount = document.getElementById('resultImageCount');
+                this.resultSize = document.getElementById('resultSize');
+                this.gridControls = document.getElementById('gridControls');
+                this.toast = document.getElementById('toast');
+            }
+
+            initializeEventListeners() {
+                // File input
+                this.fileInput.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        this.handleFiles(e.target.files);
+                        this.fileInput.value = '';
+                    }
+                });
+
+                // Drop zone events
+                this.dropZone.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.dropZone.classList.add('dragover');
+                });
+
+                this.dropZone.addEventListener('dragleave', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.dropZone.classList.remove('dragover');
+                });
+
+                this.dropZone.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    this.dropZone.classList.remove('dragover');
+                    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                        this.handleFiles(e.dataTransfer.files);
+                    }
+                });
+
+                this.dropZone.addEventListener('click', (e) => {
+                    if (e.target === this.dropZone || e.target.closest('.drop-zone-content')) {
+                        this.fileInput.click();
+                    }
+                });
+
+                // Layout mode change
+                this.layoutMode.addEventListener('change', () => {
+                    this.gridControls.style.display = this.layoutMode.value === 'grid' ? 'block' : 'none';
+                    this.layoutInfo.textContent = this.layoutMode.value.charAt(0).toUpperCase() + this.layoutMode.value.slice(1);
+                    this.updateMiniGrid();
+                });
+
+                this.gridColumns.addEventListener('change', () => this.updateMiniGrid());
+                this.spacing.addEventListener('change', () => this.updateMiniGrid());
+
+                // Buttons
+                this.convertBtn.addEventListener('click', () => this.convertToPDF());
+                this.clearAllBtn.addEventListener('click', () => this.clearAll());
+                this.arrangeBtn.addEventListener('click', () => this.autoArrange());
+                this.reverseBtn.addEventListener('click', () => this.reverseOrder());
+                this.downloadBtn.addEventListener('click', () => this.downloadPDF());
+                this.previewBtn.addEventListener('click', () => this.previewPDF());
+                this.convertMoreBtn.addEventListener('click', () => this.resetAll());
+
+                document.addEventListener('dragover', (e) => e.preventDefault());
+                document.addEventListener('drop', (e) => e.preventDefault());
+            }
+
+            handleFiles(fileList) {
+                const validTypes = ['image/jpeg', 'image/png', 'image/bmp', 'image/gif', 'image/tiff', 'image/webp'];
+                let addedCount = 0;
+
+                for (const file of fileList) {
+                    if (validTypes.includes(file.type)) {
+                        const isDuplicate = this.images.some(img => img.name === file.name && img.size === file.size);
+                        if (!isDuplicate) {
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                const img = new Image();
+                                img.onload = () => {
+                                    this.images.push({
+                                        file: file,
+                                        dataUrl: e.target.result,
+                                        name: file.name,
+                                        size: file.size,
+                                        type: file.type,
+                                        width: img.width,
+                                        height: img.height
+                                    });
+                                    addedCount++;
+                                    if (this.images.length === 1 || addedCount === fileList.length) {
+                                        this.previewSection.classList.add('visible');
+                                        this.updatePreview();
+                                    }
+                                };
+                                img.src = e.target.result;
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    }
+                }
+
+                if (addedCount === 0 && fileList.length > 0) {
+                    this.showToast('No valid images found', 'error');
+                } else if (addedCount > 0) {
+                    this.showToast(`Added ${addedCount} image(s)`, 'success');
+                }
+            }
+
+            updatePreview() {
+                this.imageCount.textContent = this.images.length;
+                this.updateMiniGrid();
+                this.updateImageList();
+                this.layoutInfo.textContent = this.layoutMode.value.charAt(0).toUpperCase() + this.layoutMode.value.slice(1);
+            }
+
+            updateMiniGrid() {
+                if (this.images.length === 0) {
+                    this.miniGrid.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-plus-circle"></i>
+                            <p>Add images to see preview</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                const cols = this.layoutMode.value === 'grid' ? parseInt(this.gridColumns.value) :
+                    this.layoutMode.value === 'horizontal' ? this.images.length : 3;
+
+                const spacingMap = { 'none': 0, 'small': 3, 'medium': 5, 'large': 10 };
+                const gap = spacingMap[this.spacing.value] || 5;
+
+                const displayImages = this.images.slice(0, 20);
+
+                this.miniGrid.innerHTML = `
+                    <div class="grid-preview" style="grid-template-columns: repeat(${Math.min(cols, displayImages.length)}, 1fr); gap: ${gap}px;">
+                        ${displayImages.map(img => `
+                            <img src="${img.dataUrl}" alt="${img.name}" title="${img.name}">
+                        `).join('')}
+                        ${this.images.length > 20 ? `<div style="display:flex;align-items:center;justify-content:center;background:#e5e7eb;border-radius:4px;font-weight:600;color:#6c757d;height:100px;">+${this.images.length - 20} more</div>` : ''}
+                    </div>
+                `;
+            }
+
+            updateImageList() {
+                if (this.images.length === 0) {
+                    this.imageList.innerHTML = `
+                        <div class="empty-state" style="text-align:center;padding:40px;color:#9ca3af;">
+                            <i class="fas fa-arrow-down" style="font-size:2rem;display:block;margin-bottom:10px;"></i>
+                            <p>Drop images here or upload above</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                this.imageList.innerHTML = this.images.map((img, index) => `
+                    <div class="image-list-item" draggable="true" data-index="${index}">
+                        <span class="index">#${index + 1}</span>
+                        <span class="drag-handle"><i class="fas fa-grip-vertical"></i></span>
+                        <img src="${img.dataUrl}" alt="${img.name}" class="thumb">
+                        <div class="info">
+                            <span class="name">${img.name}</span>
+                            <span class="size">${this.formatFileSize(img.size)}</span>
+                            <span class="dimensions">${img.width || '?'} × ${img.height || '?'} px</span>
+                        </div>
+                        <button class="remove-btn" data-index="${index}" title="Remove image">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `).join('');
+
+                this.imageList.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const index = parseInt(e.currentTarget.dataset.index);
+                        this.removeImage(index);
+                    });
+                });
+
+                this.setupImageReordering();
+            }
+
+            setupImageReordering() {
+                const items = this.imageList.querySelectorAll('.image-list-item');
+                let draggedItem = null;
+
+                items.forEach(item => {
+                    item.addEventListener('dragstart', (e) => {
+                        draggedItem = item;
+                        item.classList.add('dragging');
+                        e.dataTransfer.effectAllowed = 'move';
+                        e.dataTransfer.setData('text/plain', item.dataset.index);
+                    });
+
+                    item.addEventListener('dragend', (e) => {
+                        item.classList.remove('dragging');
+                        items.forEach(i => i.classList.remove('drag-over'));
+                        draggedItem = null;
+                    });
+
+                    item.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'move';
+                        items.forEach(i => i.classList.remove('drag-over'));
+                        if (draggedItem && draggedItem !== item) {
+                            item.classList.add('drag-over');
+                        }
+                    });
+
+                    item.addEventListener('dragleave', (e) => {
+                        item.classList.remove('drag-over');
+                    });
+
+                    item.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        item.classList.remove('drag-over');
+
+                        if (!draggedItem || draggedItem === item) return;
+
+                        const fromIndex = parseInt(draggedItem.dataset.index);
+                        const toIndex = parseInt(item.dataset.index);
+
+                        if (fromIndex !== toIndex) {
+                            const [movedImage] = this.images.splice(fromIndex, 1);
+                            this.images.splice(toIndex, 0, movedImage);
+                            this.updatePreview();
+                            this.showToast(`Moved image from position ${fromIndex + 1} to ${toIndex + 1}`, 'success');
+                        }
+                    });
+                });
+            }
+
+            removeImage(index) {
+                const removed = this.images[index];
+                this.images.splice(index, 1);
+                if (this.images.length === 0) {
+                    this.previewSection.classList.remove('visible');
+                    this.resultSection.classList.add('hidden');
+                } else {
+                    this.updatePreview();
+                }
+                this.showToast(`Removed ${removed.name}`, 'warning');
+            }
+
+            autoArrange() {
+                if (this.images.length === 0) {
+                    this.showToast('No images to arrange', 'warning');
+                    return;
+                }
+                this.images.sort((a, b) => a.name.localeCompare(b.name));
+                this.updatePreview();
+                this.showToast('Images arranged alphabetically', 'success');
+            }
+
+            reverseOrder() {
+                if (this.images.length === 0) {
+                    this.showToast('No images to reverse', 'warning');
+                    return;
+                }
+                this.images.reverse();
+                this.updatePreview();
+                this.showToast('Image order reversed', 'success');
+            }
+
+            clearAll() {
+                if (this.images.length === 0) return;
+                const count = this.images.length;
+                this.images = [];
+                this.previewSection.classList.remove('visible');
+                this.resultSection.classList.add('hidden');
+                this.progressContainer.classList.add('hidden');
+                this.convertedPDF = null;
+                this.showToast(`Cleared ${count} images`, 'warning');
+            }
+
+            async convertToPDF() {
+                if (this.images.length === 0) {
+                    this.showToast('Please add at least one image', 'error');
+                    return;
+                }
+
+                this.convertBtn.disabled = true;
+                this.progressContainer.classList.remove('hidden');
+                this.resultSection.classList.add('hidden');
+                this.convertedPDF = null;
+
+                try {
+                    this.updateProgress(10, 'Loading images...');
+
+                    // Load all images
+                    const loadedImages = await Promise.all(
+                        this.images.map(img => this.loadImage(img.dataUrl))
+                    );
+
+                    this.updateProgress(30, 'Creating PDF...');
+
+                    // Create PDF using jsPDF
+                    const { jsPDF } = window.jspdf;
+                    
+                    // Page size mapping (in mm)
+                    const pageSizes = {
+                        'A4': { w: 210, h: 297 },
+                        'Letter': { w: 215.9, h: 279.4 },
+                        'Legal': { w: 215.9, h: 355.6 },
+                        'A3': { w: 297, h: 420 }
+                    };
+
+                    const pageSize = pageSizes[this.pageSize.value] || pageSizes['A4'];
+                    
+                    // Create PDF
+                    const pdf = new jsPDF({
+                        orientation: 'portrait',
+                        unit: 'mm',
+                        format: [pageSize.w, pageSize.h]
+                    });
+
+                    // Calculate layout
+                    const margin = 10; // mm
+                    const spacing = this.spacing.value === 'none' ? 0 :
+                                   this.spacing.value === 'small' ? 3 :
+                                   this.spacing.value === 'large' ? 8 : 5;
+
+                    const availableWidth = pageSize.w - (margin * 2);
+                    const availableHeight = pageSize.h - (margin * 2);
+
+                    const layout = this.layoutMode.value;
+                    const cols = layout === 'grid' ? parseInt(this.gridColumns.value) :
+                                layout === 'horizontal' ? this.images.length : 1;
+
+                    let imgWidth, imgHeight;
+
+                    if (layout === 'horizontal') {
+                        imgWidth = (availableWidth - (spacing * (this.images.length - 1))) / this.images.length;
+                        imgHeight = availableHeight;
+                    } else if (layout === 'vertical') {
+                        imgWidth = availableWidth;
+                        imgHeight = (availableHeight - (spacing * (this.images.length - 1))) / this.images.length;
+                    } else {
+                        const colsCount = Math.min(cols, this.images.length);
+                        const rowsCount = Math.ceil(this.images.length / colsCount);
+                        imgWidth = (availableWidth - (spacing * (colsCount - 1))) / colsCount;
+                        imgHeight = (availableHeight - (spacing * (rowsCount - 1))) / rowsCount;
+                    }
+
+                    this.updateProgress(50, 'Adding images to PDF...');
+
+                    // Add images to PDF
+                    for (let i = 0; i < loadedImages.length; i++) {
+                        const img = loadedImages[i];
+                        
+                        let x, y;
+
+                        if (layout === 'horizontal') {
+                            x = margin + i * (imgWidth + spacing);
+                            y = margin;
+                        } else if (layout === 'vertical') {
+                            x = margin;
+                            y = margin + i * (imgHeight + spacing);
+                        } else {
+                            const colsCount = Math.min(cols, this.images.length);
+                            const row = Math.floor(i / colsCount);
+                            const col = i % colsCount;
+                            x = margin + col * (imgWidth + spacing);
+                            y = margin + row * (imgHeight + spacing);
+                        }
+
+                        // Add image to PDF
+                        const imgData = img.src || img.dataUrl;
+                        
+                        // Calculate fit
+                        const fit = this.imageFit.value;
+                        let fitWidth = imgWidth;
+                        let fitHeight = imgHeight;
+                        
+                        if (fit === 'contain') {
+                            const imgAspect = img.width / img.height;
+                            const boxAspect = imgWidth / imgHeight;
+                            
+                            if (imgAspect > boxAspect) {
+                                fitHeight = fitWidth / imgAspect;
+                            } else {
+                                fitWidth = fitHeight * imgAspect;
+                            }
+                            
+                            const offsetX = (imgWidth - fitWidth) / 2;
+                            const offsetY = (imgHeight - fitHeight) / 2;
+                            pdf.addImage(imgData, 'JPEG', x + offsetX, y + offsetY, fitWidth, fitHeight);
+                        } else if (fit === 'cover') {
+                            const imgAspect = img.width / img.height;
+                            const boxAspect = imgWidth / imgHeight;
+                            
+                            if (imgAspect > boxAspect) {
+                                fitWidth = fitHeight * imgAspect;
+                            } else {
+                                fitHeight = fitWidth / imgAspect;
+                            }
+                            
+                            const offsetX = (imgWidth - fitWidth) / 2;
+                            const offsetY = (imgHeight - fitHeight) / 2;
+                            pdf.addImage(imgData, 'JPEG', x + offsetX, y + offsetY, fitWidth, fitHeight);
+                        } else {
+                            // Stretch
+                            pdf.addImage(imgData, 'JPEG', x, y, imgWidth, imgHeight);
+                        }
+
+                        // Update progress
+                        const progress = 50 + ((i + 1) / loadedImages.length) * 40;
+                        this.updateProgress(progress, `Adding image ${i + 1} of ${loadedImages.length}`);
+                    }
+
+                    this.updateProgress(95, 'Finalizing PDF...');
+
+                    // Generate PDF blob
+                    const pdfOutput = pdf.output('blob');
+                    this.convertedPDF = pdfOutput;
+                    this.convertedPDFSize = pdfOutput.size;
+
+                    this.updateProgress(100, 'Complete!');
+
+                    setTimeout(() => {
+                        this.progressContainer.classList.add('hidden');
+                        this.resultSection.classList.remove('hidden');
+                        this.resultImageCount.textContent = this.images.length;
+                        this.resultSize.textContent = this.formatFileSize(this.convertedPDFSize);
+                        this.convertBtn.disabled = false;
+                        this.showToast('PDF generated successfully!', 'success');
+                    }, 500);
+
+                } catch (error) {
+                    console.error('Conversion error:', error);
+                    this.progressText.textContent = '❌ Error: ' + error.message;
+                    this.convertBtn.disabled = false;
+                    this.showToast('Error: ' + error.message, 'error');
+                    setTimeout(() => {
+                        this.progressContainer.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+
+            loadImage(src) {
+                return new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.crossOrigin = 'anonymous';
+                    img.onload = () => resolve(img);
+                    img.onerror = reject;
+                    img.src = src;
+                });
+            }
+
+            updateProgress(percent, text) {
+                this.progressFill.style.width = percent + '%';
+                this.progressText.textContent = text;
+            }
+
+            downloadPDF() {
+                if (this.convertedPDF) {
+                    const url = URL.createObjectURL(this.convertedPDF);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = `single-page-${Date.now()}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    this.showToast('Download started!', 'success');
+                }
+            }
+
+            previewPDF() {
+                if (this.convertedPDF) {
+                    const url = URL.createObjectURL(this.convertedPDF);
+                    window.open(url, '_blank');
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                }
+            }
+
+            resetAll() {
+                this.clearAll();
+                this.fileInput.value = '';
+                this.convertedPDF = null;
+                this.convertedPDFSize = 0;
+                this.resultSection.classList.add('hidden');
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            showToast(message, type = 'info') {
+                this.toast.textContent = message;
+                this.toast.className = 'toast ' + type;
+                this.toast.classList.add('show');
+
+                clearTimeout(this.toastTimeout);
+                this.toastTimeout = setTimeout(() => {
+                    this.toast.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            new SinglePagePDFConverter();
+        });
+    </script>
+</body>
+</html>
